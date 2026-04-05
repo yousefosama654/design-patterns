@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singleton Pattern - Design Patterns for Juniors</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232736;
+            --text: #e8e9ed;
+            --text-muted: #9ca0b0;
+            --teal: #1a9e8f;
+            --orange: #f5a623;
+            --accent-blue: #5b8dee;
+            --accent-purple: #9b6dd7;
+            --accent-pink: #e06ca0;
+            --accent-green: #4ccea0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background orbs */
+        .background-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+        }
+
+        .orb1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-blue);
+            top: -100px;
+            right: -100px;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb2 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-purple);
+            bottom: -50px;
+            left: -50px;
+            animation: float 25s infinite ease-in-out reverse;
+        }
+
+        .orb3 {
+            width: 350px;
+            height: 350px;
+            background: var(--accent-green);
+            top: 50%;
+            left: 10%;
+            animation: float 30s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Layout */
+        .content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 60px;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out 0.3s forwards;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--teal), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--surface2);
+            color: var(--orange);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid var(--orange);
+            margin-top: 1rem;
+        }
+
+        /* Section styles */
+        section {
+            margin: 80px 0;
+            opacity: 0;
+        }
+
+        section.visible {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        section h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--teal);
+        }
+
+        section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent-blue);
+        }
+
+        p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        strong {
+            color: var(--text);
+        }
+
+        code {
+            background: rgba(26, 158, 143, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: var(--accent-green);
+        }
+
+        /* Story Animation */
+        .story-container {
+            background: var(--surface);
+            border: 1px solid var(--surface2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .story-step {
+            display: none;
+            min-height: 400px;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .story-step.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .story-step h3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .story-visualization {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: auto;
+            min-height: 200px;
+            margin: 2rem 0;
+            background: var(--surface2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .boiler-svg {
+            width: 200px;
+            height: 250px;
+        }
+
+        .error-message {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid #dc2626;
+            color: #fca5a5;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid #22c55e;
+            color: #86efac;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .story-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .story-buttons button {
+            padding: 0.75rem 1.5rem;
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--teal);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .story-buttons button:hover:not(:disabled) {
+            background: var(--teal);
+            transform: translateY(-2px);
+        }
+
+        .story-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Step progress dots */
+        .step-progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 2rem;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 2px solid var(--text-muted);
+            transition: all 0.3s;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .step-dot.active {
+            background: var(--teal);
+            border-color: var(--teal);
+            transform: scale(1.3);
+        }
+        .step-dot.done {
+            background: var(--teal);
+            border-color: var(--teal);
+            opacity: 0.5;
+        }
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background: var(--surface2);
+            max-width: 80px;
+            min-width: 30px;
+        }
+
+        /* Step icon */
+        .step-icon {
+            font-size: 2.5rem;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* Step visual area */
+        .step-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin: 1.5rem 0;
+            width: 100%;
+        }
+
+        /* Boiler card */
+        .boiler-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 20px 28px;
+            border: 2px solid;
+            border-radius: 16px;
+            min-width: 160px;
+            transition: all 0.3s;
+        }
+        .boiler-icon { font-size: 2.8rem; }
+        .boiler-label { font-weight: 700; font-size: 0.95rem; }
+        .boiler-state { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-align: center; }
+
+        .story-buttons span {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+        }
+
+        /* Code comparison */
+        .code-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--surface2);
+            flex-wrap: wrap;
+        }
+
+        .code-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            margin-bottom: -1px;
+        }
+
+        .code-tab:hover {
+            color: var(--text);
+        }
+
+        .code-tab.active {
+            color: var(--teal);
+            border-bottom-color: var(--teal);
+        }
+
+        .code-tab.bad-tab {
+            color: #fca5a5;
+        }
+
+        .code-tab.bad-tab.active {
+            color: #fca5a5;
+            border-bottom-color: #fca5a5;
+        }
+
+        .code-tab.good-tab {
+            color: #86efac;
+        }
+
+        .code-tab.good-tab.active {
+            color: #86efac;
+            border-bottom-color: #86efac;
+        }
+
+        .code-blocks {
+            position: relative;
+        }
+
+        .code-block {
+            display: none;
+            background: var(--surface2);
+            border: 1px solid var(--surface2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .code-block.active {
+            display: block;
+        }
+
+        .code-block pre {
+            padding: 1.5rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            color: var(--text);
+        }
+
+        .code-block.bad-code {
+            border-color: #dc2626;
+        }
+
+        .code-block.good-code {
+            border-color: #22c55e;
+        }
+
+        /* Syntax highlighting */
+        .keyword { color: #d4a5ff; }
+        .string { color: #79c0ff; }
+        .comment { color: #6e7681; }
+        .function { color: #79c0ff; }
+        .class-name { color: #d4a5ff; }
+        .error-line { background: rgba(220, 38, 38, 0.15); }
+        .success-line { background: rgba(34, 197, 94, 0.15); }
+
+        /* Comparison cards */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .comparison-card {
+            background: var(--surface);
+            border: 1px solid var(--surface2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .comparison-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid;
+        }
+
+        .comparison-card.bad h4 {
+            color: #fca5a5;
+            border-bottom-color: #fca5a5;
+        }
+
+        .comparison-card.good h4 {
+            color: #86efac;
+            border-bottom-color: #86efac;
+        }
+
+        .comparison-card ul {
+            list-style: none;
+        }
+
+        .comparison-card li {
+            padding: 0.5rem 0;
+            color: var(--text-muted);
+        }
+
+        .comparison-card li:before {
+            content: "→ ";
+            margin-right: 0.5rem;
+            color: var(--teal);
+        }
+
+        /* Wire diagram */
+        .diagram-container {
+            background: var(--surface);
+            border: 1px solid var(--surface2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .diagram-svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Summary cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, var(--surface), var(--surface2));
+            border: 1px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .summary-card h4 {
+            color: var(--teal);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .summary-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Principles section */
+        .principles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .principle-card {
+            background: var(--surface);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .principle-card h4 {
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .principle-card p {
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Bottom navigation */
+        .nav-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 100px;
+            padding: 3rem 0;
+            border-top: 1px solid var(--surface2);
+        }
+
+        .nav-bottom a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+
+        .nav-bottom a:hover {
+            color: var(--text);
+        }
+
+        .next-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--teal), #2bac98);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .next-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(26, 158, 143, 0.4);
+        }
+
+        .arrow {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .next-button:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Smooth fade transitions between steps */
+        @keyframes step-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .story-step {
+            animation: step-fade-in 0.6s ease-out forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            section h2 {
+                font-size: 1.8rem;
+            }
+
+            .comparison-grid,
+            .principles-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .story-visualization {
+                min-height: 250px;
+            }
+
+            .nav-bottom {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-bottom a:first-child {
+                order: 2;
+            }
+
+            .nav-bottom .next-button {
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-orbs">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+
+    <div class="content">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>The Singleton Pattern</h1>
+            <span class="badge">Creational Pattern</span>
+        </section>
+
+        <!-- Chocolate Factory Problem -->
+        <section id="storySection">
+            <h2>The Chocolate Factory Problem</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Imagine a chocolate factory with a boiler to melt chocolate and milk. Only <strong style="color: var(--text);">ONE</strong> boiler should ever exist. Let's see what goes wrong without Singleton.</p>
+
+            <div class="story-container">
+                <!-- Progress bar -->
+                <div class="step-progress">
+                    <div class="step-dot active" data-step="0"></div>
+                    <div class="step-line"></div>
+                    <div class="step-dot" data-step="1"></div>
+                    <div class="step-line"></div>
+                    <div class="step-dot" data-step="2"></div>
+                    <div class="step-line"></div>
+                    <div class="step-dot" data-step="3"></div>
+                </div>
+
+                <!-- Step 1 -->
+                <div class="story-step active">
+                    <div class="step-icon" style="background: rgba(26,158,143,0.1); border-color: var(--teal);">🏭</div>
+                    <h3 style="color: var(--teal);">Step 1 — The Factory Setup</h3>
+                    <p>The chocolate factory has <strong>one boiler</strong> to melt chocolate and milk. It starts empty, gets filled, boiled, then drained.</p>
+                    <div class="step-visual">
+                        <div class="boiler-card" style="border-color: var(--teal); background: rgba(26,158,143,0.08);">
+                            <div class="boiler-icon">🫙</div>
+                            <div class="boiler-label">ChocolateBoiler</div>
+                            <div class="boiler-state" style="color: var(--teal);">empty = True &nbsp;|&nbsp; boiled = False</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="story-step">
+                    <div class="step-icon" style="background: rgba(245,166,35,0.1); border-color: var(--orange);">⚠️</div>
+                    <h3 style="color: var(--orange);">Step 2 — The Problem</h3>
+                    <p>Without Singleton, the code allows <strong>creating multiple instances</strong>. Two separate boilers now exist — each with its own independent state.</p>
+                    <div class="step-visual" style="gap: 16px; flex-direction: row; flex-wrap: wrap; justify-content: center;">
+                        <div class="boiler-card" style="border-color: var(--accent-blue); background: rgba(91,141,238,0.08);">
+                            <div class="boiler-icon">🫙</div>
+                            <div class="boiler-label">boiler1</div>
+                            <code style="color: var(--accent-blue); font-size: 0.8rem;">ChocolateBoiler()</code>
+                            <div class="boiler-state" style="color: var(--accent-green);">filled = True</div>
+                        </div>
+                        <div style="display:flex; align-items:center; font-size: 2rem; color: var(--orange);">≠</div>
+                        <div class="boiler-card" style="border-color: var(--orange); background: rgba(245,166,35,0.08);">
+                            <div class="boiler-icon">🫙</div>
+                            <div class="boiler-label">boiler2</div>
+                            <code style="color: var(--orange); font-size: 0.8rem;">ChocolateBoiler()</code>
+                            <div class="boiler-state" style="color: var(--text-muted);">filled = False</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="story-step">
+                    <div class="step-icon" style="background: rgba(220,38,38,0.1); border-color: #dc2626;">💥</div>
+                    <h3 style="color: #f87171;">Step 3 — Disaster Strikes!</h3>
+                    <p>boiler1 was filled and boiled. But boiler2 thinks it's still empty — so it gets filled <strong>again</strong>. Both boilers now contain chocolate, causing a production error.</p>
+                    <div class="step-visual">
+                        <div style="background: rgba(220,38,38,0.08); border: 1px solid #dc2626; border-radius: 12px; padding: 20px; width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.8; color: #fca5a5;">
+                            ❌ boiler1 state: filled=True, boiled=True<br>
+                            ❌ boiler2 state: filled=True, boiled=False<br>
+                            <span style="color: #f87171; font-weight: bold;">💥 CRITICAL: Two instances — conflicting states!</span><br>
+                            <span style="color: #f87171;">   Result: Wasted chocolate, production halted.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="story-step">
+                    <div class="step-icon" style="background: rgba(76,206,160,0.1); border-color: var(--accent-green);">🔒</div>
+                    <h3 style="color: var(--accent-green);">Step 4 — Singleton Saves the Day</h3>
+                    <p>With Singleton, <code style="color: var(--accent-green);">get_instance()</code> always returns the <strong>same</strong> object. No matter how many times you call it, there is only ever ONE boiler.</p>
+                    <div class="step-visual">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%;">
+                            <div style="text-align:center; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted);">boiler1 =<br>get_instance()</div>
+                            <div style="font-size: 1.5rem; color: var(--accent-green);">→</div>
+                            <div class="boiler-card" style="border-color: var(--accent-green); background: rgba(76,206,160,0.08); margin: 0;">
+                                <div class="boiler-icon">🫙</div>
+                                <div class="boiler-label">ChocolateBoiler</div>
+                                <div class="boiler-state" style="color: var(--accent-green);">_instance (ONE and only)</div>
+                            </div>
+                            <div style="font-size: 1.5rem; color: var(--accent-green);">←</div>
+                            <div style="text-align:center; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted);">boiler2 =<br>get_instance()</div>
+                        </div>
+                        <div style="margin-top: 16px; background: rgba(76,206,160,0.08); border: 1px solid var(--accent-green); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--accent-green); text-align: center; width: 100%;">
+                            ✓ &nbsp; boiler1 is boiler2 &nbsp;→&nbsp; <strong>True</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="story-buttons">
+                    <button id="prevStep" onclick="changeStep(-1)" disabled>← Previous</button>
+                    <span id="stepIndicator">Step 1 of 4</span>
+                    <button id="nextStep" onclick="changeStep(1)">Next →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bad vs Good Code -->
+        <section id="codeComparison">
+            <h2>Bad Code vs Good Code</h2>
+
+            <div class="code-tabs">
+                <button class="code-tab bad-tab active" onclick="switchCodeTab('badCode')">Bad: Multiple Instances</button>
+                <button class="code-tab good-tab" onclick="switchCodeTab('goodCode')">Good: Singleton Pattern</button>
+                <button class="code-tab good-tab" onclick="switchCodeTab('javaExample')">Java Example</button>
+            </div>
+
+            <div class="code-blocks">
+                <!-- Bad Code -->
+                <div id="badCode" class="code-block bad-code active">
+                    <pre><code><span class="keyword">class</span> <span class="class-name">ChocolateBoiler</span>:
+    <span class="keyword">def</span> __init__(self):
+        <span class="keyword">self</span>.empty = <span class="keyword">True</span>
+        <span class="keyword">self</span>.boiled = <span class="keyword">False</span>
+
+    <span class="keyword">def</span> fill(self):
+        <span class="keyword">if</span> <span class="keyword">self</span>.empty:
+            <span class="keyword">self</span>.empty = <span class="keyword">False</span>
+            <span class="keyword">self</span>.boiled = <span class="keyword">False</span>
+            print(<span class="string">"Boiler filled with chocolate and milk."</span>)
+
+    <span class="keyword">def</span> drain(self):
+        <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">self</span>.empty <span class="keyword">and</span> <span class="keyword">self</span>.boiled:
+            <span class="keyword">self</span>.empty = <span class="keyword">True</span>
+            print(<span class="string">"Boiler drained."</span>)
+
+    <span class="keyword">def</span> boil(self):
+        <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">self</span>.empty <span class="keyword">and</span> <span class="keyword">not</span> <span class="keyword">self</span>.boiled:
+            <span class="keyword">self</span>.boiled = <span class="keyword">True</span>
+            print(<span class="string">"Boiler contents boiled."</span>)
+
+<span class="comment"># PROBLEM: Creates two separate instances!</span>
+<span class="error-line">boiler1 = ChocolateBoiler()</span>
+<span class="error-line">boiler2 = ChocolateBoiler()</span>
+
+boiler1.fill()
+boiler1.boil()
+<span class="error-line">boiler2.drain()  <span class="comment"># Won't work properly!</span></span></code></pre>
+                </div>
+
+                <!-- Good Code -->
+                <div id="goodCode" class="code-block good-code">
+                    <pre><code><span class="keyword">class</span> <span class="class-name">BoilerOperations</span>:
+    <span class="keyword">def</span> __init__(self):
+        <span class="keyword">self</span>.empty = <span class="keyword">True</span>
+        <span class="keyword">self</span>.boiled = <span class="keyword">False</span>
+
+    <span class="keyword">def</span> fill(self):
+        <span class="keyword">if</span> <span class="keyword">self</span>.empty:
+            <span class="keyword">self</span>.empty = <span class="keyword">False</span>
+            <span class="keyword">self</span>.boiled = <span class="keyword">False</span>
+            print(<span class="string">"Boiler filled with chocolate and milk."</span>)
+
+<span class="keyword">class</span> <span class="class-name">ChocolateBoiler</span>:
+    <span class="success-line">_instance = <span class="keyword">None</span></span>
+
+    <span class="keyword">def</span> __init__(self):
+        <span class="keyword">self</span>.operations = BoilerOperations()
+
+    <span class="success-line">@classmethod</span>
+    <span class="success-line"><span class="keyword">def</span> get_instance(cls):</span>
+    <span class="success-line">    <span class="keyword">if</span> cls._instance <span class="keyword">is</span> <span class="keyword">None</span>:</span>
+    <span class="success-line">        cls._instance = cls()</span>
+    <span class="success-line">    <span class="keyword">return</span> cls._instance</span>
+
+<span class="comment"># SOLUTION: Both get the SAME instance!</span>
+<span class="success-line">boiler1 = ChocolateBoiler.get_instance()</span>
+<span class="success-line">boiler2 = ChocolateBoiler.get_instance()</span>
+
+<span class="success-line">print(boiler1 <span class="keyword">is</span> boiler2)  <span class="comment"># True!</span></span>
+
+boiler1.operations.fill()
+boiler1.operations.boil()</code></pre>
+                </div>
+
+                <!-- Java Example -->
+                <div id="javaExample" class="code-block good-code">
+                    <pre><code><span class="keyword">class</span> <span class="class-name">President</span> {
+    <span class="success-line"><span class="keyword">private static</span> President instance;</span>
+
+    <span class="success-line"><span class="keyword">private</span> President() {</span>
+    <span class="success-line">        <span class="comment">// Private constructor prevents multiple instances</span></span>
+    <span class="success-line">    }</span>
+
+    <span class="success-line"><span class="keyword">public static</span> President getInstance() {</span>
+    <span class="success-line">        <span class="keyword">if</span> (instance == <span class="keyword">null</span>) {</span>
+    <span class="success-line">            instance = <span class="keyword">new</span> President();</span>
+    <span class="success-line">        }</span>
+    <span class="success-line">        <span class="keyword">return</span> instance;</span>
+    <span class="success-line">    }</span>
+
+    <span class="keyword">public void</span> speak() {
+        System.<span class="function">out</span>.println(<span class="string">"I am the only President!"</span>);
+    }
+}
+
+<span class="keyword">public class</span> <span class="class-name">Main</span> {
+    <span class="keyword">public static void</span> main(String[] args) {
+        <span class="success-line">President p1 = President.getInstance();</span>
+        <span class="success-line">President p2 = President.getInstance();</span>
+
+        p1.speak();
+
+        <span class="success-line">System.<span class="function">out</span>.println(p1 == p2);</span>
+        <span class="success-line"><span class="comment">// Output: true (same instance)</span></span>
+    }
+}</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- How Singleton Works -->
+        <section id="howItWorks">
+            <h2>How Singleton Works</h2>
+
+            <div class="diagram-container">
+                <svg class="diagram-svg" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Title -->
+                    <text x="300" y="25" text-anchor="middle" font-family="Inter" font-size="16" font-weight="bold" fill="var(--teal)">
+                        Singleton Mechanism
+                    </text>
+
+                    <!-- Class Box -->
+                    <rect x="50" y="60" width="500" height="120" fill="var(--surface2)" stroke="var(--accent-blue)" stroke-width="2" rx="8"/>
+                    <text x="60" y="85" font-family="Inter" font-size="14" font-weight="bold" fill="var(--teal)">ChocolateBoiler Class</text>
+
+                    <!-- Private Variable -->
+                    <text x="70" y="110" font-family="JetBrains Mono" font-size="12" fill="var(--accent-pink)">_instance = None</text>
+
+                    <!-- Get Instance Method -->
+                    <text x="70" y="135" font-family="JetBrains Mono" font-size="12" fill="var(--accent-green)">get_instance():</text>
+                    <text x="90" y="155" font-family="JetBrains Mono" font-size="11" fill="var(--text-muted)">if _instance is None:</text>
+                    <text x="110" y="172" font-family="JetBrains Mono" font-size="11" fill="var(--text-muted)">_instance = new ChocolateBoiler()</text>
+
+                    <!-- Arrow down -->
+                    <line x1="300" y1="190" x2="300" y2="220" stroke="var(--teal)" stroke-width="2"/>
+                    <polygon points="300,220 295,210 305,210" fill="var(--teal)"/>
+
+                    <!-- First Call -->
+                    <g>
+                        <rect x="50" y="220" width="210" height="100" fill="var(--surface)" stroke="var(--accent-green)" stroke-width="2" rx="8"/>
+                        <text x="70" y="245" font-family="Inter" font-size="13" font-weight="bold" fill="var(--accent-green)">First Call</text>
+                        <text x="70" y="270" font-family="JetBrains Mono" font-size="11" fill="var(--text)">boiler1 = get_instance()</text>
+                        <text x="70" y="290" font-family="JetBrains Mono" font-size="11" fill="var(--text-muted)">_instance was None</text>
+                        <text x="70" y="310" font-family="JetBrains Mono" font-size="11" fill="var(--text-muted)">→ creates instance</text>
+                    </g>
+
+                    <!-- Second Call -->
+                    <g>
+                        <rect x="340" y="220" width="210" height="100" fill="var(--surface)" stroke="var(--accent-green)" stroke-width="2" rx="8"/>
+                        <text x="360" y="245" font-family="Inter" font-size="13" font-weight="bold" fill="var(--accent-green)">Second Call</text>
+                        <text x="360" y="270" font-family="JetBrains Mono" font-size="11" fill="var(--text)">boiler2 = get_instance()</text>
+                        <text x="360" y="290" font-family="JetBrains Mono" font-size="11" fill="var(--text-muted)">_instance exists</text>
+                        <text x="360" y="310" font-family="JetBrains Mono" font-size="11" fill="var(--text-muted)">→ returns same</text>
+                    </g>
+
+                    <!-- Result -->
+                    <rect x="100" y="350" width="400" height="40" fill="rgba(76, 206, 160, 0.1)" stroke="var(--accent-green)" stroke-width="2" rx="6"/>
+                    <text x="300" y="375" text-anchor="middle" font-family="Inter" font-size="13" font-weight="bold" fill="var(--accent-green)">
+                        Result: boiler1 is boiler2 → True
+                    </text>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Key Characteristics -->
+        <section id="characteristics">
+            <h2>Key Characteristics</h2>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>Only One Instance</h4>
+                    <p>The class ensures exactly one instance exists throughout the application's lifetime.</p>
+                </div>
+
+                <div class="summary-card">
+                    <h4>Global Access Point</h4>
+                    <p>You access the instance through a static method like <code>get_instance()</code> from anywhere.</p>
+                </div>
+
+                <div class="summary-card">
+                    <h4>Lazy Instantiation</h4>
+                    <p>The instance is created only when first requested, not when the class is defined.</p>
+                </div>
+
+                <div class="summary-card">
+                    <h4>Common Use Cases</h4>
+                    <p>Database connections, loggers, configuration managers, thread pools, caches.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Globals vs Singleton -->
+        <section id="globalsVsSingleton">
+            <h2>Global Variables vs Singleton</h2>
+
+            <div class="comparison-grid">
+                <div class="comparison-card bad">
+                    <h4>Global Variable</h4>
+                    <ul>
+                        <li>Always instantiated at startup</li>
+                        <li>Can be modified from anywhere</li>
+                        <li>Can't handle inheritance</li>
+                        <li>No encapsulation</li>
+                        <li>Hard to test</li>
+                    </ul>
+                </div>
+
+                <div class="comparison-card good">
+                    <h4>Singleton Pattern</h4>
+                    <ul>
+                        <li>Created only when needed (lazy)</li>
+                        <li>Controlled access through methods</li>
+                        <li>Can extend and override behavior</li>
+                        <li>Encapsulated and protected</li>
+                        <li>Easier to test and mock</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Design Principles -->
+        <section id="principles">
+            <h2>Design Principles</h2>
+
+            <div class="principles-grid">
+                <div class="principle-card">
+                    <h4>Encapsulate What Varies</h4>
+                    <p>The singleton pattern encapsulates the instance creation logic and ensures it stays consistent. The "variation" (multiple vs single instance) is hidden inside the class.</p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>S in SOLID: Single Responsibility</h4>
+                    <p>Your class should have one reason to change. A ChocolateBoiler shouldn't worry about being instantiated multiple times—the Singleton handles that.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <div class="nav-bottom">
+            <a href="../index.html">← Back to Home</a>
+            <a href="decorator.html" class="next-button">
+                Next: Decorator Pattern <span class="arrow">→</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Story animation
+        let currentStep = 0;
+        const totalSteps = 4;
+
+        function changeStep(direction) {
+            const steps = document.querySelectorAll('.story-step');
+            const dots = document.querySelectorAll('.step-dot');
+
+            steps[currentStep].classList.remove('active');
+            dots[currentStep].classList.remove('active');
+            dots[currentStep].classList.add('done');
+
+            currentStep += direction;
+
+            if (currentStep < 0) currentStep = 0;
+            if (currentStep >= totalSteps) currentStep = totalSteps - 1;
+
+            steps[currentStep].classList.add('active');
+            dots.forEach((dot, i) => {
+                dot.classList.remove('active', 'done');
+                if (i < currentStep) dot.classList.add('done');
+                if (i === currentStep) dot.classList.add('active');
+            });
+
+            document.getElementById('prevStep').disabled = currentStep === 0;
+            document.getElementById('nextStep').disabled = currentStep === totalSteps - 1;
+            document.getElementById('stepIndicator').textContent = `Step ${currentStep + 1} of ${totalSteps}`;
+        }
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Code tab switching
+        function switchCodeTab(tabId) {
+            // Hide all code blocks
+            document.querySelectorAll('.code-block').forEach(block => {
+                block.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.code-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected block
+            document.getElementById(tabId).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Initialize
+        changeStep(0);
+    </script>
+</body>
+</html>

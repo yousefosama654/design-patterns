@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decorator Pattern - Design Patterns for Junior Devs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232736;
+            --text: #e8e9ed;
+            --text-muted: #9ca0b0;
+            --teal: #1a9e8f;
+            --orange: #f5a623;
+            --accent-blue: #5b8dee;
+            --accent-purple: #9b6dd7;
+            --accent-pink: #e06ca0;
+            --accent-green: #4ccea0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background orbs */
+        .bg-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            filter: blur(80px);
+        }
+
+        .orb1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-blue);
+            top: -200px;
+            left: -200px;
+            animation: float1 20s infinite ease-in-out;
+        }
+
+        .orb2 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-purple);
+            top: 50%;
+            right: -150px;
+            animation: float2 25s infinite ease-in-out;
+        }
+
+        .orb3 {
+            width: 350px;
+            height: 350px;
+            background: var(--teal);
+            bottom: -200px;
+            left: 50%;
+            animation: float3 30s infinite ease-in-out;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -50px); }
+            66% { transform: translate(-30px, 50px); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-40px, 60px); }
+            66% { transform: translate(40px, -60px); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(50px, 40px); }
+            66% { transform: translate(-50px, -40px); }
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hero section */
+        .hero {
+            text-align: center;
+            margin-bottom: 80px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--teal), var(--accent-green));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--teal), var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        /* Section styles */
+        section {
+            margin-bottom: 80px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        section:nth-child(2) { animation-delay: 0.2s; }
+        section:nth-child(3) { animation-delay: 0.4s; }
+        section:nth-child(4) { animation-delay: 0.6s; }
+        section:nth-child(5) { animation-delay: 0.8s; }
+        section:nth-child(6) { animation-delay: 1s; }
+        section:nth-child(7) { animation-delay: 1.2s; }
+        section:nth-child(8) { animation-delay: 1.4s; }
+        section:nth-child(9) { animation-delay: 1.6s; }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 20px 0 15px 0;
+            color: var(--accent-green);
+        }
+
+        p {
+            font-size: 1rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        /* Coffee story section */
+        .coffee-story {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 12px;
+            border-left: 4px solid var(--teal);
+            margin-bottom: 40px;
+        }
+
+        .coffee-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .coffee-cup {
+            width: 120px;
+            height: 140px;
+            background: linear-gradient(to right, #8B4513, #A0522D);
+            border-radius: 0 0 20px 20px;
+            border: 3px solid #654321;
+            position: relative;
+            box-shadow: inset -5px 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .coffee-cup::after {
+            content: '';
+            position: absolute;
+            width: 140px;
+            height: 30px;
+            right: -25px;
+            top: 30px;
+            border: 3px solid #654321;
+            border-radius: 50%;
+            border-top: none;
+            background: transparent;
+        }
+
+        .toppings {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-left: 20px;
+        }
+
+        .topping {
+            background: var(--surface2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-green);
+            font-size: 0.95rem;
+        }
+
+        .topping strong {
+            color: var(--accent-green);
+        }
+
+        /* Class explosion animation */
+        .class-explosion {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .explosion-classes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 30px 0;
+        }
+
+        .class-box {
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-blue));
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            animation: explode 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .class-box:nth-child(1) { animation-delay: 0s; }
+        .class-box:nth-child(2) { animation-delay: 0.1s; }
+        .class-box:nth-child(3) { animation-delay: 0.2s; }
+        .class-box:nth-child(4) { animation-delay: 0.3s; }
+        .class-box:nth-child(5) { animation-delay: 0.4s; }
+        .class-box:nth-child(6) { animation-delay: 0.5s; }
+
+        @keyframes explode {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .explosion-counter {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-pink);
+            margin: 30px 0;
+        }
+
+        .warning {
+            background: rgba(240, 100, 100, 0.2);
+            border: 2px solid var(--accent-pink);
+            padding: 20px;
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 600;
+            margin-top: 30px;
+        }
+
+        /* Code comparison */
+        .code-comparison {
+            margin-bottom: 60px;
+        }
+
+        .code-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .code-tab {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .code-tab.bad {
+            background: rgba(255, 100, 100, 0.2);
+            color: #ff6464;
+            border: 2px solid #ff6464;
+        }
+
+        .code-tab.bad.active {
+            background: #ff6464;
+            color: white;
+        }
+
+        .code-tab.good {
+            background: rgba(76, 206, 160, 0.2);
+            color: var(--accent-green);
+            border: 2px solid var(--accent-green);
+        }
+
+        .code-tab.good.active {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .code-block {
+            background: var(--surface);
+            border: 1px solid var(--surface2);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            display: none;
+        }
+
+        .code-block.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            white-space: pre;
+        }
+
+        .keyword { color: #c678dd !important; }
+        .string { color: #98c379 !important; }
+        .number { color: #d19a66 !important; }
+        .comment { color: #7f848e !important; font-style: italic; }
+        .function { color: #61afef !important; }
+        .class-name { color: #e5c07b !important; }
+
+        /* Decorator wrapping diagram */
+        .wrapping-diagram {
+            background: var(--surface);
+            padding: 60px 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .diagram-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .diagram-step {
+            text-align: center;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--teal), var(--accent-green));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin: 0 auto 15px;
+            font-size: 1.2rem;
+        }
+
+        .circles-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .circle1 {
+            width: 80px;
+            height: 80px;
+            border-color: var(--accent-pink);
+            color: var(--accent-pink);
+            z-index: 1;
+        }
+
+        .circle2 {
+            width: 140px;
+            height: 140px;
+            border-color: var(--orange);
+            color: var(--orange);
+            z-index: 0;
+        }
+
+        .circle3 {
+            width: 200px;
+            height: 200px;
+            border-color: var(--teal);
+            color: var(--teal);
+            z-index: -1;
+        }
+
+        .circle4 {
+            width: 260px;
+            height: 260px;
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            z-index: -2;
+        }
+
+        .cost-breakdown {
+            background: var(--surface2);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            text-align: left;
+            display: inline-block;
+        }
+
+        /* Coffee builder */
+        .coffee-builder {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 60px;
+        }
+
+        .builder-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .builder-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .builder-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--accent-green);
+        }
+
+        .control-group select,
+        .control-group input[type="checkbox"] {
+            padding: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--surface2);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .control-group select {
+            cursor: pointer;
+        }
+
+        .addon-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .addon-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .addon-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .addon-item label {
+            margin: 0;
+            color: var(--text);
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+        .builder-display {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .order-summary {
+            background: var(--surface2);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .order-summary h3 {
+            margin-top: 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--surface);
+            font-size: 0.95rem;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--surface);
+            color: var(--accent-green);
+        }
+
+        .decorator-chain {
+            background: var(--surface2);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent-green);
+            text-align: center;
+            word-break: break-word;
+        }
+
+        /* Summary section */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .summary-card {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid var(--teal);
+        }
+
+        .summary-card h4 {
+            color: var(--accent-green);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .summary-card p {
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Principles section */
+        .principles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .principle-card {
+            background: linear-gradient(135deg, var(--surface), var(--surface2));
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--surface2);
+            border-top: 2px solid var(--accent-green);
+        }
+
+        .principle-card h4 {
+            color: var(--accent-green);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .principle-card p {
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Bottom navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 1px solid var(--surface2);
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--teal);
+        }
+
+        .next-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, var(--teal), var(--accent-green));
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(26, 158, 143, 0.3);
+        }
+
+        .next-button:hover {
+            transform: translateX(5px);
+            box-shadow: 0 0 30px rgba(26, 158, 143, 0.6);
+            filter: brightness(1.1);
+        }
+
+        .next-button .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .next-button:hover .arrow {
+            transform: translateX(5px);
+        }
+
+        /* Scroll animations */
+        .scroll-fade {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .scroll-fade.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 40px 15px;
+            }
+
+            .coffee-visual {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .toppings {
+                grid-template-columns: 1fr;
+            }
+
+            .builder-content {
+                grid-template-columns: 1fr;
+            }
+
+            code {
+                font-size: 0.85rem;
+            }
+
+            .bottom-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .next-button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orbs">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <span class="badge">Structural Pattern</span>
+            <h1>The Decorator Pattern</h1>
+            <p class="subtitle">Attach new responsibilities to an object dynamically without affecting other objects</p>
+        </div>
+
+        <!-- Problem: Starbuzz Coffee -->
+        <section class="scroll-fade">
+            <h2>The Starbuzz Coffee Problem</h2>
+            <div class="coffee-story">
+                <p>Imagine building a system for a coffee shop with different types of coffee (Espresso, House Blend) with add-ons (milk, soy, mocha, whipped cream). Each add-on has additional cost.</p>
+                <div class="coffee-visual">
+                    <div style="text-align: center;">
+                        <div class="coffee-cup"></div>
+                        <p style="margin-top: 20px; font-weight: 600;">Coffee Base</p>
+                    </div>
+                    <div class="toppings">
+                        <div class="topping"><strong>Milk</strong> +$0.30</div>
+                        <div class="topping"><strong>Soy</strong> +$0.50</div>
+                        <div class="topping"><strong>Mocha</strong> +$0.20</div>
+                        <div class="topping"><strong>Whipped Cream</strong> +$0.70</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Class Explosion Problem -->
+        <section class="scroll-fade">
+            <h2>The Class Explosion Problem</h2>
+            <div class="class-explosion">
+                <p>Let's try a naive approach with subclasses for every combination...</p>
+                <div class="explosion-classes">
+                    <div class="class-box">EspressoWithMilk</div>
+                    <div class="class-box">EspressoWithSoy</div>
+                    <div class="class-box">EspressoWithMocha</div>
+                    <div class="class-box">EspressoWithMilkAndSoy</div>
+                    <div class="class-box">HouseBlendWithMilk</div>
+                    <div class="class-box">HouseBlendWithSoy</div>
+                </div>
+                <div class="explosion-counter" id="classCount">6 Classes...</div>
+                <div class="warning">STOP! There must be a better way!</div>
+            </div>
+        </section>
+
+        <!-- Bad vs Good Code -->
+        <section class="scroll-fade">
+            <h2>Bad vs Good Code Comparison</h2>
+            <div class="code-comparison">
+                <div class="code-toggle">
+                    <button class="code-tab bad active" onclick="showCode('bad')">Bad: Subclass Explosion</button>
+                    <button class="code-tab good" onclick="showCode('good')">Good: Decorator Pattern</button>
+                </div>
+
+                <div id="bad" class="code-block active">
+                    <pre><code><span class="comment"># Base class for beverages</span>
+<span class="keyword">class</span> <span class="class-name">Beverage</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">self</span>.description = <span class="string">"Unknown Beverage"</span>
+
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.description
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">raise</span> <span class="class-name">NotImplementedError</span>()
+
+<span class="comment"># Specific beverage types</span>
+<span class="keyword">class</span> <span class="class-name">Espresso</span>(<span class="class-name">Beverage</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">super</span>().__init__()
+        <span class="keyword">self</span>.description = <span class="string">"Espresso"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="number">1.99</span>
+
+<span class="keyword">class</span> <span class="class-name">HouseBlend</span>(<span class="class-name">Beverage</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">super</span>().__init__()
+        <span class="keyword">self</span>.description = <span class="string">"House Blend Coffee"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="number">0.89</span>
+
+<span class="comment"># Subclasses with add-ons - PROBLEM!</span>
+<span class="keyword">class</span> <span class="class-name">EspressoWithMilk</span>(<span class="class-name">Espresso</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">super</span>().__init__()
+        <span class="keyword">self</span>.description += <span class="string">", Milk"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">super</span>().cost() + <span class="number">0.3</span>
+
+<span class="keyword">class</span> <span class="class-name">HouseBlendWithSoyAndWhippedCream</span>(<span class="class-name">HouseBlend</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">super</span>().__init__()
+        <span class="keyword">self</span>.description += <span class="string">", Soy, Whipped Cream"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">super</span>().cost() + <span class="number">0.5</span> + <span class="number">0.7</span>
+
+<span class="comment"># More combinations = More classes!</span></code></pre>
+                </div>
+
+                <div id="good" class="code-block">
+                    <pre><code><span class="comment"># Base class for beverages</span>
+<span class="keyword">class</span> <span class="class-name">Beverage</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>, description=<span class="string">"Unknown Beverage"</span>):
+        <span class="keyword">self</span>.description = description
+
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.description
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">raise</span> <span class="class-name">NotImplementedError</span>()
+
+<span class="comment"># Concrete beverage classes</span>
+<span class="keyword">class</span> <span class="class-name">Espresso</span>(<span class="class-name">Beverage</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">super</span>().__init__(<span class="string">"Espresso"</span>)
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="number">1.99</span>
+
+<span class="keyword">class</span> <span class="class-name">HouseBlend</span>(<span class="class-name">Beverage</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">super</span>().__init__(<span class="string">"House Blend Coffee"</span>)
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="number">0.89</span>
+
+<span class="comment"># Decorator base class</span>
+<span class="keyword">class</span> <span class="class-name">AddOnDecorator</span>(<span class="class-name">Beverage</span>):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>, beverage):
+        <span class="keyword">self</span>.beverage = beverage
+
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.beverage.get_description()
+
+<span class="comment"># Concrete decorator classes</span>
+<span class="keyword">class</span> <span class="class-name">Milk</span>(<span class="class-name">AddOnDecorator</span>):
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="string">f</span><span class="string">"{</span><span class="keyword">self</span>.beverage.get_description()<span class="string">}, Milk"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.beverage.cost() + <span class="number">0.3</span>
+
+<span class="keyword">class</span> <span class="class-name">Soy</span>(<span class="class-name">AddOnDecorator</span>):
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="string">f</span><span class="string">"{</span><span class="keyword">self</span>.beverage.get_description()<span class="string">}, Soy"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.beverage.cost() + <span class="number">0.5</span>
+
+<span class="keyword">class</span> <span class="class-name">Mocha</span>(<span class="class-name">AddOnDecorator</span>):
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="string">f</span><span class="string">"{</span><span class="keyword">self</span>.beverage.get_description()<span class="string">}, Mocha"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.beverage.cost() + <span class="number">0.2</span>
+
+<span class="keyword">class</span> <span class="class-name">WhippedCream</span>(<span class="class-name">AddOnDecorator</span>):
+    <span class="keyword">def</span> <span class="function">get_description</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="string">f</span><span class="string">"{</span><span class="keyword">self</span>.beverage.get_description()<span class="string">}, Whipped Cream"</span>
+
+    <span class="keyword">def</span> <span class="function">cost</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="keyword">self</span>.beverage.cost() + <span class="number">0.7</span>
+
+<span class="keyword">def</span> <span class="function">main</span>():
+    <span class="comment"># Espresso with Milk and Whipped Cream</span>
+    beverage = <span class="class-name">Espresso</span>()
+    beverage = <span class="class-name">Milk</span>(beverage)
+    beverage = <span class="class-name">WhippedCream</span>(beverage)
+    <span class="function">print</span>(<span class="string">f</span><span class="string">"{beverage.get_description()} costs ${beverage.cost()}"</span>)
+
+    <span class="comment"># House Blend with Soy and Mocha</span>
+    beverage2 = <span class="class-name">HouseBlend</span>()
+    beverage2 = <span class="class-name">Soy</span>(beverage2)
+    beverage2 = <span class="class-name">Mocha</span>(beverage2)
+    <span class="function">print</span>(<span class="string">f</span><span class="string">"{beverage2.get_description()} costs ${beverage2.cost()}"</span>)</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Decorator Wrapping Diagram -->
+        <section class="scroll-fade">
+            <h2>How Decorators Wrap Objects</h2>
+            <div class="wrapping-diagram">
+                <p>Let's trace how a decorated object calls its methods step by step:</p>
+                <div class="diagram-steps">
+                    <div class="diagram-step">
+                        <div class="step-number">1</div>
+                        <p style="margin: 0 0 15px 0;">Base Beverage</p>
+                        <div class="circles-container">
+                            <div class="circle circle1">DarkRoast<br>$0.99</div>
+                        </div>
+                    </div>
+                    <div class="diagram-step">
+                        <div class="step-number">2</div>
+                        <p style="margin: 0 0 15px 0;">Wrapped with Mocha</p>
+                        <div class="circles-container">
+                            <div class="circle circle1" style="width: 80px; height: 80px;">DarkRoast</div>
+                            <div class="circle circle2" style="width: 140px; height: 140px; border-color: var(--orange); color: var(--orange);">Mocha +$0.20</div>
+                        </div>
+                    </div>
+                    <div class="diagram-step">
+                        <div class="step-number">3</div>
+                        <p style="margin: 0 0 15px 0;">Wrapped with Whip</p>
+                        <div class="circles-container">
+                            <div class="circle circle1" style="width: 80px; height: 80px;">DarkRoast</div>
+                            <div class="circle circle2" style="width: 140px; height: 140px; border-color: var(--orange); color: var(--orange);">Mocha</div>
+                            <div class="circle circle3" style="width: 200px; height: 200px; border-color: var(--teal); color: var(--teal);">Whip +$0.10</div>
+                        </div>
+                    </div>
+                    <div class="diagram-step">
+                        <div class="step-number">4</div>
+                        <p style="margin: 0 0 15px 0;">Cost Calculation</p>
+                        <div class="cost-breakdown">
+                            Whip.cost() →<br>
+                            Mocha.cost() →<br>
+                            DarkRoast.cost() =<br>
+                            <span style="color: var(--accent-green);">$0.99 + $0.20 + $0.10<br>= $1.29</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Coffee Builder -->
+        <section class="scroll-fade">
+            <h2>Try It: Interactive Coffee Builder</h2>
+            <div class="coffee-builder">
+                <p>Create your own coffee order and see how the decorator pattern builds it up!</p>
+                <div class="builder-content">
+                    <div class="builder-controls">
+                        <div class="control-group">
+                            <label for="baseCoffee">Choose Base Coffee:</label>
+                            <select id="baseCoffee" onchange="updateOrder()">
+                                <option value="espresso">Espresso - $1.99</option>
+                                <option value="houseblend">House Blend - $0.89</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Add-ons:</label>
+                            <div class="addon-group">
+                                <div class="addon-item">
+                                    <input type="checkbox" id="milk" value="milk" onchange="updateOrder()">
+                                    <label for="milk">Milk (+$0.30)</label>
+                                </div>
+                                <div class="addon-item">
+                                    <input type="checkbox" id="soy" value="soy" onchange="updateOrder()">
+                                    <label for="soy">Soy (+$0.50)</label>
+                                </div>
+                                <div class="addon-item">
+                                    <input type="checkbox" id="mocha" value="mocha" onchange="updateOrder()">
+                                    <label for="mocha">Mocha (+$0.20)</label>
+                                </div>
+                                <div class="addon-item">
+                                    <input type="checkbox" id="whippedcream" value="whippedcream" onchange="updateOrder()">
+                                    <label for="whippedcream">Whipped Cream (+$0.70)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="builder-display">
+                        <div class="order-summary">
+                            <h3>Your Order</h3>
+                            <div id="orderItems">
+                                <div class="order-item">
+                                    <span>Espresso</span>
+                                    <span>$1.99</span>
+                                </div>
+                                <div class="order-item">
+                                    <span>Total</span>
+                                    <span>$1.99</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="decorator-chain">
+                            <strong>Decorator Chain:</strong><br>
+                            <div id="chainDisplay" style="margin-top: 10px; font-size: 0.85rem;">
+                                Espresso()
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Decorator Summary -->
+        <section class="scroll-fade">
+            <h2>Decorator Pattern Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>Dynamic Behavior</h4>
+                    <p>Add behavior dynamically without affecting other objects. Each object remains independent.</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Flexible Combinations</h4>
+                    <p>Combine multiple decorators in any order. One decorator class for each responsibility.</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Real-World Uses</h4>
+                    <p>Coffee shop orders, UI components (borders, scrollbars), input stream compression and encryption.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Design Principles -->
+        <section class="scroll-fade">
+            <h2>Design Principles at Work</h2>
+            <div class="principles">
+                <div class="principle-card">
+                    <h4>Encapsulate What Varies</h4>
+                    <p>Add-on costs and descriptions vary independently. Each decorator encapsulates one variation.</p>
+                </div>
+                <div class="principle-card">
+                    <h4>Favor Composition Over Inheritance</h4>
+                    <p>Instead of creating subclasses, we compose decorators. More flexible and maintainable.</p>
+                </div>
+                <div class="principle-card">
+                    <h4>Single Responsibility</h4>
+                    <p>Each decorator has one job: add one specific feature. Easy to test and modify.</p>
+                </div>
+                <div class="principle-card">
+                    <h4>Open/Closed Principle</h4>
+                    <p>Open for extension (new decorators), closed for modification (base classes stay stable).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <section class="bottom-nav scroll-fade">
+            <a href="../index.html" class="back-link">Back to Home</a>
+            <a href="observer.html" class="next-button">
+                Next: Observer Pattern <span class="arrow">→</span>
+            </a>
+        </section>
+    </div>
+
+    <script>
+        // Code comparison functionality
+        function showCode(type) {
+            const badCode = document.getElementById('bad');
+            const goodCode = document.getElementById('good');
+            const badTab = document.querySelector('.code-tab.bad');
+            const goodTab = document.querySelector('.code-tab.good');
+
+            if (type === 'bad') {
+                badCode.classList.add('active');
+                goodCode.classList.remove('active');
+                badTab.classList.add('active');
+                goodTab.classList.remove('active');
+            } else {
+                goodCode.classList.add('active');
+                badCode.classList.remove('active');
+                goodTab.classList.add('active');
+                badTab.classList.remove('active');
+            }
+        }
+
+        // Coffee builder functionality
+        function updateOrder() {
+            const baseCoffee = document.getElementById('baseCoffee').value;
+            const addOns = [];
+            const addOnPrices = {
+                milk: { name: 'Milk', price: 0.3 },
+                soy: { name: 'Soy', price: 0.5 },
+                mocha: { name: 'Mocha', price: 0.2 },
+                whippedcream: { name: 'Whipped Cream', price: 0.7 }
+            };
+
+            let baseName = '';
+            let basePrice = 0;
+
+            if (baseCoffee === 'espresso') {
+                baseName = 'Espresso';
+                basePrice = 1.99;
+            } else {
+                baseName = 'House Blend';
+                basePrice = 0.89;
+            }
+
+            let totalPrice = basePrice;
+            let orderHTML = `<div class="order-item"><span>${baseName}</span><span>$${basePrice.toFixed(2)}</span></div>`;
+            let chainHTML = `${baseCoffee === 'espresso' ? 'Espresso' : 'HouseBlend'}()`;
+
+            // Check add-ons
+            Object.keys(addOnPrices).forEach(key => {
+                if (document.getElementById(key).checked) {
+                    const addon = addOnPrices[key];
+                    addOns.push(addon);
+                    totalPrice += addon.price;
+                    orderHTML += `<div class="order-item"><span>${addon.name}</span><span>+$${addon.price.toFixed(2)}</span></div>`;
+                    const decoratorName = key.charAt(0).toUpperCase() + key.slice(1).replace('whippedcream', 'WhippedCream');
+                    chainHTML = `${decoratorName}(${chainHTML})`;
+                }
+            });
+
+            orderHTML += `<div class="order-item"><span>Total</span><span>$${totalPrice.toFixed(2)}</span></div>`;
+
+            document.getElementById('orderItems').innerHTML = orderHTML;
+            document.getElementById('chainDisplay').textContent = chainHTML;
+        }
+
+        // Scroll animation
+        function observeScrollAnimation() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.scroll-fade').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            observeScrollAnimation();
+            updateOrder(); // Initialize the coffee builder
+        });
+
+        // Increment class counter animation
+        setTimeout(() => {
+            let count = 6;
+            const interval = setInterval(() => {
+                count += 4;
+                if (count > 30) count = 30;
+                document.getElementById('classCount').textContent = `${count}+ Classes...`;
+                if (count >= 30) clearInterval(interval);
+            }, 300);
+        }, 500);
+    </script>
+</body>
+</html>

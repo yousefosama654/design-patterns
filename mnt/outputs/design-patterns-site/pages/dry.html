@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRY Principle - Design Patterns</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232736;
+            --text: #e8e9ed;
+            --text-muted: #9ca0b0;
+            --teal: #1a9e8f;
+            --orange: #f5a623;
+            --accent-blue: #5b8dee;
+            --accent-purple: #9b6dd7;
+            --accent-pink: #e06ca0;
+            --accent-green: #4ccea0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background orbs */
+        .background-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-blue);
+            top: -100px;
+            left: -100px;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-purple);
+            bottom: -150px;
+            right: -150px;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: var(--teal);
+            top: 50%;
+            right: 10%;
+            animation: float 12s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 80px;
+            opacity: 0;
+            animation: fadeInDown 0.8s ease-out forwards;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--surface2);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            position: relative;
+        }
+
+        .hero-highlight {
+            position: relative;
+            display: inline-block;
+        }
+
+        .strikethrough {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--orange), var(--accent-pink));
+            animation: strikeAnim 1.2s ease-out 0.5s forwards;
+        }
+
+        @keyframes strikeAnim {
+            to { width: 100%; }
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Principle Explained Card */
+        .principle-card {
+            background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+            border: 1px solid rgba(90, 158, 143, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.2s forwards;
+        }
+
+        .principle-card h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--teal), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .principle-card p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .principle-icon {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background: var(--surface2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        /* Code Comparison Section */
+        .code-comparison {
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.4s forwards;
+        }
+
+        .comparison-header {
+            margin-bottom: 30px;
+        }
+
+        .comparison-header h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .toggle-buttons {
+            display: flex;
+            gap: 10px;
+            background: var(--surface);
+            padding: 6px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .toggle-btn.bad {
+            background: rgba(255, 71, 87, 0.1);
+            color: #ff4757;
+            border: 2px solid transparent;
+        }
+
+        .toggle-btn.good {
+            background: rgba(76, 206, 160, 0.1);
+            color: var(--accent-green);
+            border: 2px solid transparent;
+        }
+
+        .toggle-btn.active {
+            border-color: currentColor;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--surface);
+            border: 1px solid rgba(90, 158, 143, 0.15);
+            border-radius: 10px;
+            padding: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            line-height: 1.6;
+            position: relative;
+            display: none;
+        }
+
+        .code-block.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Code syntax highlighting */
+        .code-block code {
+            display: block;
+            color: var(--text);
+            white-space: pre;
+        }
+
+        /* Bad code highlighting */
+        .bad-code .keyword { color: var(--accent-blue); }
+        .bad-code .function { color: var(--text); }
+        .bad-code .string { color: var(--accent-green); }
+        .bad-code .number { color: var(--orange); }
+        .bad-code .duplicate { background: rgba(255, 71, 87, 0.15); color: #ff7585; font-weight: 600; }
+        .bad-code .comment { color: var(--text-muted); font-style: italic; }
+
+        /* Good code highlighting */
+        .good-code .keyword { color: var(--accent-blue); }
+        .good-code .function { color: var(--text); }
+        .good-code .string { color: var(--accent-green); }
+        .good-code .number { color: var(--orange); }
+        .good-code .improved { background: rgba(76, 206, 160, 0.15); color: #5cfdaa; font-weight: 600; }
+        .good-code .comment { color: var(--text-muted); font-style: italic; }
+
+        .line-count {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(90, 158, 143, 0.1);
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .line-count strong {
+            color: var(--text);
+        }
+
+        .reduction {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* Consolidation Visual */
+        .consolidation-visual {
+            background: var(--surface);
+            border: 1px solid rgba(90, 158, 143, 0.15);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.6s forwards;
+        }
+
+        .consolidation-visual h3 {
+            margin-bottom: 30px;
+            font-size: 1.3rem;
+        }
+
+        .blocks-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            min-height: 120px;
+        }
+
+        .code-block-visual {
+            width: 120px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(90, 158, 143, 0.2), rgba(155, 109, 215, 0.2));
+            border: 2px solid var(--accent-purple);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 5px;
+            animation: blockMerge 2s ease-in-out infinite;
+        }
+
+        .code-block-visual:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .code-block-visual:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .code-block-visual:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .code-block-visual:nth-child(4) {
+            animation-delay: 0.6s;
+            border-color: var(--teal);
+            background: linear-gradient(135deg, rgba(26, 158, 143, 0.3), rgba(76, 206, 160, 0.2));
+            width: 200px;
+        }
+
+        @keyframes blockMerge {
+            0%, 100% { opacity: 1; }
+            45%, 55% { opacity: 0.3; }
+        }
+
+        .block-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .arrow {
+            font-size: 1.5rem;
+            color: var(--teal);
+            opacity: 0.6;
+        }
+
+        /* Key Takeaways */
+        .takeaways {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 80px;
+        }
+
+        .takeaway-card {
+            background: var(--surface);
+            border: 1px solid rgba(90, 158, 143, 0.15);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+            transition: all 0.3s ease;
+        }
+
+        .takeaway-card:nth-child(1) { animation-delay: 0.7s; }
+        .takeaway-card:nth-child(2) { animation-delay: 0.8s; }
+        .takeaway-card:nth-child(3) { animation-delay: 0.9s; }
+
+        .takeaway-card:hover {
+            border-color: rgba(90, 158, 143, 0.4);
+            background: var(--surface2);
+            transform: translateY(-5px);
+        }
+
+        .takeaway-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .takeaway-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .takeaway-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(90, 158, 143, 0.1);
+            margin-top: 60px;
+            gap: 20px;
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        .next-button {
+            background: linear-gradient(135deg, var(--teal), var(--accent-green));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(26, 158, 143, 0.3);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .next-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(26, 158, 143, 0.5);
+        }
+
+        .arrow-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .next-button:hover .arrow-icon {
+            transform: translateX(5px);
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .principle-card {
+                padding: 25px;
+            }
+
+            .code-block {
+                padding: 20px;
+                font-size: 0.85rem;
+            }
+
+            .bottom-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .next-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .back-link {
+                text-align: center;
+            }
+
+            .blocks-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="badge">Design Principle</div>
+            <h1>Don't <span class="hero-highlight">Repeat<span class="strikethrough"></span></span> Yourself</h1>
+            <p>Write cleaner, more maintainable code by eliminating duplication and consolidating logic</p>
+        </section>
+
+        <!-- Principle Explained -->
+        <section class="principle-card">
+            <div class="principle-icon">🎯</div>
+            <h2>What is the DRY Principle?</h2>
+            <p><strong>"Don't Repeat Yourself"</strong> is a fundamental software development principle that states every piece of knowledge or logic must have a single, unambiguous representation within a system.</p>
+            <p>Instead of copying and pasting code across your application, the DRY principle encourages you to abstract common functionality into reusable functions, classes, or modules. This single source of truth makes your code easier to understand, maintain, and modify.</p>
+            <p>When you violate DRY by duplicating code, you create multiple points of failure. If a bug exists in duplicated code, you need to fix it in multiple places—a recipe for inconsistency and maintenance nightmares.</p>
+        </section>
+
+        <!-- Code Comparison -->
+        <section class="code-comparison">
+            <div class="comparison-header">
+                <h2>Bad vs Good Code Comparison</h2>
+                <div class="toggle-buttons">
+                    <button class="toggle-btn bad active" onclick="toggleCode('bad')">❌ Bad Code</button>
+                    <button class="toggle-btn good" onclick="toggleCode('good')">✓ Good Code</button>
+                </div>
+            </div>
+
+            <!-- Bad Code Block -->
+            <div class="code-block bad-code active" id="badCode">
+                <code><span class="keyword">def</span> <span class="function">calculate_regular_discount</span>(<span class="keyword">price</span>):
+    <span class="keyword">discount</span> = <span class="keyword">price</span> * <span class="number">0.05</span>
+    <span class="keyword">total</span> = <span class="keyword">price</span> - <span class="keyword">discount</span>
+    <span class="keyword">print</span>(<span class="string">f"Regular customer: Price after discount is ${total:.2f}"</span>)
+    <span class="keyword">return</span> <span class="keyword">total</span>
+
+<span class="duplicate"><span class="keyword">def</span> <span class="function">calculate_vip_discount</span>(<span class="keyword">price</span>):
+    <span class="keyword">discount</span> = <span class="keyword">price</span> * <span class="number">0.1</span>
+    <span class="keyword">total</span> = <span class="keyword">price</span> - <span class="keyword">discount</span>
+    <span class="keyword">print</span>(<span class="string">f"VIP customer: Price after discount is ${total:.2f}"</span>)
+    <span class="keyword">return</span> <span class="keyword">total</span></span>
+
+<span class="duplicate"><span class="keyword">def</span> <span class="function">calculate_employee_discount</span>(<span class="keyword">price</span>):
+    <span class="keyword">discount</span> = <span class="keyword">price</span> * <span class="number">0.2</span>
+    <span class="keyword">total</span> = <span class="keyword">price</span> - <span class="keyword">discount</span>
+    <span class="keyword">print</span>(<span class="string">f"Employee: Price after discount is ${total:.2f}"</span>)
+    <span class="keyword">return</span> <span class="keyword">total</span></span>
+
+<span class="keyword">price</span> = <span class="number">100</span>
+<span class="function">calculate_regular_discount</span>(<span class="keyword">price</span>)
+<span class="function">calculate_vip_discount</span>(<span class="keyword">price</span>)
+<span class="function">calculate_employee_discount</span>(<span class="keyword">price</span>)</code>
+                <div class="line-count">Lines of code: <strong>22</strong></div>
+            </div>
+
+            <!-- Good Code Block -->
+            <div class="code-block good-code" id="goodCode">
+                <code><span class="keyword">def</span> <span class="function">calculate_discount</span>(<span class="keyword">price</span>, <span class="keyword">user_type</span>):
+    <span class="improved"><span class="keyword">discounts</span> = {
+        <span class="string">"regular"</span>: <span class="number">0.05</span>,
+        <span class="string">"vip"</span>: <span class="number">0.1</span>,
+        <span class="string">"employee"</span>: <span class="number">0.2</span>
+    }</span>
+    <span class="keyword">discount_rate</span> = <span class="keyword">discounts</span>.<span class="function">get</span>(<span class="keyword">user_type</span>.<span class="function">lower</span>(), <span class="number">0</span>)
+    <span class="keyword">discount</span> = <span class="keyword">price</span> * <span class="keyword">discount_rate</span>
+    <span class="keyword">total</span> = <span class="keyword">price</span> - <span class="keyword">discount</span>
+    <span class="improved"><span class="keyword">print</span>(<span class="string">f"{user_type.capitalize()} customer: Price after discount is ${total:.2f}"</span>)</span>
+    <span class="keyword">return</span> <span class="keyword">total</span>
+
+<span class="keyword">price</span> = <span class="number">100</span>
+<span class="function">calculate_discount</span>(<span class="keyword">price</span>, <span class="string">"regular"</span>)
+<span class="function">calculate_discount</span>(<span class="keyword">price</span>, <span class="string">"vip"</span>)
+<span class="function">calculate_discount</span>(<span class="keyword">price</span>, <span class="string">"employee"</span>)</code>
+                <div class="line-count">Lines of code: <strong>13</strong> <span class="reduction">(41% reduction)</span></div>
+            </div>
+        </section>
+
+        <!-- Consolidation Visual -->
+        <section class="consolidation-visual">
+            <h3>Code Consolidation in Action</h3>
+            <div class="blocks-container">
+                <div class="code-block-visual">
+                    <div class="block-label">Function 1</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">calculate_regular</div>
+                </div>
+                <div class="code-block-visual">
+                    <div class="block-label">Function 2</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">calculate_vip</div>
+                </div>
+                <div class="code-block-visual">
+                    <div class="block-label">Function 3</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">calculate_employee</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="code-block-visual">
+                    <div class="block-label">Single Function</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">calculate_discount</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Takeaways -->
+        <section>
+            <h2 style="margin-bottom: 40px; font-size: 2rem;">Key Takeaways</h2>
+            <div class="takeaways">
+                <div class="takeaway-card">
+                    <div class="takeaway-icon">🐛</div>
+                    <h3>Fewer Bugs</h3>
+                    <p>Fix logic once, and it's fixed everywhere. Duplicated code means duplicated bugs—DRY eliminates this problem.</p>
+                </div>
+                <div class="takeaway-card">
+                    <div class="takeaway-icon">🔧</div>
+                    <h3>Easier Maintenance</h3>
+                    <p>Update features in one place. Changes propagate automatically across your entire codebase, saving time and reducing errors.</p>
+                </div>
+                <div class="takeaway-card">
+                    <div class="takeaway-icon">✨</div>
+                    <h3>Cleaner Code</h3>
+                    <p>Less duplication means less code to read and understand. Your codebase becomes more elegant and professional.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="../index.html" class="back-link">← Back to Home</a>
+            <a href="singleton.html" class="next-button">
+                Next: Singleton Pattern
+                <span class="arrow-icon">→</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Scroll Animation Script -->
+    <script>
+        function toggleCode(type) {
+            const badCode = document.getElementById('badCode');
+            const goodCode = document.getElementById('goodCode');
+            const badBtn = document.querySelector('.toggle-btn.bad');
+            const goodBtn = document.querySelector('.toggle-btn.good');
+
+            if (type === 'bad') {
+                badCode.classList.add('active');
+                goodCode.classList.remove('active');
+                badBtn.classList.add('active');
+                goodBtn.classList.remove('active');
+            } else {
+                goodCode.classList.add('active');
+                badCode.classList.remove('active');
+                goodBtn.classList.add('active');
+                badBtn.classList.remove('active');
+            }
+        }
+
+        // IntersectionObserver for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('.principle-card, .code-comparison, .consolidation-visual, .takeaway-card').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
